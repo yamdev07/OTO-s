@@ -34,19 +34,19 @@ class PrestationsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Nos Prestations")),
+      appBar: AppBar(title: const Text("Nos Prestations")),
       body: ListView.builder(
         itemCount: prestations.length,
         itemBuilder: (context, index) {
           final item = prestations[index];
           return Card(
-            margin: EdgeInsets.all(10),
+            margin: const EdgeInsets.all(10),
             elevation: 4,
             child: ListTile(
               leading: Image.asset(item.image, width: 60, height: 60, fit: BoxFit.cover),
               title: Text(item.titre),
               subtitle: Text('${item.prix.toStringAsFixed(0)} FCFA'),
-              trailing: Icon(Icons.add_shopping_cart),
+              trailing: const Icon(Icons.add_shopping_cart),
               onTap: () {
                 // TODO: Ajouter au panier
               },
