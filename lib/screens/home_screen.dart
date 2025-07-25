@@ -68,7 +68,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   SizedBox(height: size.height * 0.05),
                   CircleAvatar(
                     radius: size.width * 0.18,
-                    backgroundImage: const AssetImage('assets/images/car_service.png'),
+                    backgroundImage: const AssetImage('assets/images/car_image.png'),
                     backgroundColor: Colors.transparent,
                   ),
                   const SizedBox(height: 30),

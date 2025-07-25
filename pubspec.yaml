@@ -28,13 +28,12 @@ flutter:
   uses-material-design: true
 
   assets:
-    - lib/assets/images/avatar.png
-    - lib/assets/images/car_image.png
+    - assets/images/
 
 
   fonts:
     - family: Poppins
       fonts:
-        - asset: lib/assets/fonts/Ubuntu-Regular.ttf
-        - asset: lib/assets/fonts/Ubuntu-Bold.ttf
+        - asset: assets/fonts/Ubuntu-Regular.ttf
+        - asset: assets/fonts/Ubuntu-Bold.ttf
           weight: 700

@@ -30,14 +30,14 @@ class _CompteScreenState extends State<CompteScreen> {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         final doc = await FirebaseFirestore.instance
-            .collection('clients') // 🔄 Collection corrigée
+            .collection('clients')
             .doc(user.uid)
             .get();
         setState(() {
           email = user.email ?? 'Email non défini';
           nom = doc.exists
-              ? (doc['nom'] ?? user.displayName ?? 'Nom non défini')
-              : user.displayName ?? 'Nom non défini';
+              ? (doc['nom'] ?? user.displayName ?? '')
+              : user.displayName ?? '';
           _nomController.text = nom;
           isLoading = false;
         });
@@ -60,7 +60,7 @@ class _CompteScreenState extends State<CompteScreen> {
 
     try {
       await FirebaseFirestore.instance
-          .collection('clients') // 🔄 Collection corrigée
+          .collection('clients')
           .doc(user.uid)
           .update({'nom': newNom});
       setState(() {
@@ -118,15 +118,16 @@ class _CompteScreenState extends State<CompteScreen> {
                     CircleAvatar(
                       radius: 50,
                       backgroundColor: AppTheme.primaryColor,
-                      backgroundImage:
-                          const AssetImage('assets/images/avatar.png'),
+                      backgroundImage: nom.isNotEmpty
+                          ? const AssetImage('assets/images/avatar.png')
+                          : null,
                       child: nom.isEmpty
                           ? const Icon(Icons.person, size: 50, color: Colors.white)
                           : null,
                     ),
                     const SizedBox(height: 20),
 
-                    /// NOM + ÉDITION
+                    // NOM + ÉDITION
                     isEditing
                         ? Column(
                             children: [
@@ -156,7 +157,7 @@ class _CompteScreenState extends State<CompteScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                nom,
+                                nom.isNotEmpty ? nom : 'Nom non défini',
                                 style: const TextStyle(
                                   fontSize: 22,
                                   fontWeight: FontWeight.bold,
@@ -172,7 +173,7 @@ class _CompteScreenState extends State<CompteScreen> {
                           ),
                     const SizedBox(height: 5),
                     Text(
-                      email,
+                      email.isNotEmpty ? email : 'Email non défini',
                       style: const TextStyle(fontSize: 16, color: Colors.grey),
                     ),
                     const SizedBox(height: 30),
