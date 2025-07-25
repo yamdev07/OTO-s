@@ -29,6 +29,8 @@ flutter:
 
   assets:
     - lib/assets/images/avatar.png
+    - lib/assets/images/car_image.png
+
 
   fonts:
     - family: Poppins

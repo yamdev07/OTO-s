@@ -188,8 +188,9 @@ class RegisterScreenState extends State<RegisterScreen> {
                           decoration: const InputDecoration(labelText: 'Email'),
                           keyboardType: TextInputType.emailAddress,
                           validator: (value) {
-                            if (value == null || value.isEmpty)
+                            if (value == null || value.isEmpty) {
                               return 'Champ obligatoire';
+                            }
                             if (!value.contains('@')) return 'Email invalide';
                             return null;
                           },
@@ -256,8 +257,9 @@ class RegisterScreenState extends State<RegisterScreen> {
                               const InputDecoration(labelText: 'Mot de passe'),
                           obscureText: true,
                           validator: (value) {
-                            if (value == null || value.isEmpty)
+                            if (value == null || value.isEmpty) {
                               return 'Champ obligatoire';
+                            }
                             if (value.length < 6) return 'Minimum 6 caractères';
                             return null;
                           },
