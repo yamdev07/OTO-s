@@ -15,31 +15,77 @@ class NavigationScreen extends StatefulWidget {
 class _NavigationScreenState extends State<NavigationScreen> {
   int _currentIndex = 0;
 
-  final List<Widget> _pages = [
-    const HomeScreen(),
+  static const _pages = [
+    HomeScreen(),
     PrestationsScreen(),
-    const VehiculeScreen(),
-    const CompteScreen(),
-    const ContactScreen(),
+    VehiculeScreen(),
+    CompteScreen(),
+    ContactScreen(),
+  ];
+
+  static const _items = [
+    BottomNavigationBarItem(
+      icon: Icon(Icons.home_outlined),
+      activeIcon: Icon(Icons.home),
+      label: 'Accueil',
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.build_outlined),
+      activeIcon: Icon(Icons.build),
+      label: 'Services',
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.directions_car_outlined),
+      activeIcon: Icon(Icons.directions_car),
+      label: 'Véhicule',
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.person_outline),
+      activeIcon: Icon(Icons.person),
+      label: 'Compte',
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.headset_mic_outlined),
+      activeIcon: Icon(Icons.headset_mic),
+      label: 'Support',
+    ),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.blue,
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Accueil'),
-          BottomNavigationBarItem(icon: Icon(Icons.build), label: 'Prestations'),
-          BottomNavigationBarItem(icon: Icon(Icons.directions_car), label: 'Mon véhicule'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Compte'),
-          BottomNavigationBarItem(icon: Icon(Icons.contact_mail), label: 'Contact'),
-        ],
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _pages,
+      ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 16,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: BottomNavigationBar(
+            currentIndex: _currentIndex,
+            onTap: (i) => setState(() => _currentIndex = i),
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: Colors.white,
+            selectedItemColor: const Color(0xFF1E3A8A),
+            unselectedItemColor: const Color(0xFF94A3B8),
+            selectedLabelStyle: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 11,
+            ),
+            unselectedLabelStyle: const TextStyle(fontSize: 11),
+            elevation: 0,
+            items: _items,
+          ),
+        ),
       ),
     );
   }

@@ -9,7 +9,7 @@ class AppTheme {
   static final ThemeData lightTheme = ThemeData(
     primaryColor: primaryColor,
     scaffoldBackgroundColor: backgroundColor,
-    fontFamily: 'Poppins',
+    fontFamily: 'Ubuntu',
     colorScheme: const ColorScheme.light(
       primary: primaryColor,
       secondary: accentColor,

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -8,664 +10,633 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final List<Map<String, dynamic>> _mainServices = [
+  String _userName = '';
+
+  static const _primaryDark = Color(0xFF1E3A8A);
+  static const _primary = Color(0xFF3B82F6);
+
+  static const _services = [
     {
       'title': 'Dépannage',
       'icon': Icons.emergency,
-      'route': '/urgence',
-      'gradient': [Color(0xFFEF5350), Color(0xFFE53935)],
+      'colors': [Color(0xFFEF4444), Color(0xFFDC2626)],
     },
     {
       'title': 'Réparation',
       'icon': Icons.build_rounded,
-      'route': '/reparation',
-      'gradient': [Color(0xFF42A5F5), Color(0xFF1E88E5)],
+      'colors': [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
     },
     {
       'title': 'Vidange',
       'icon': Icons.opacity,
-      'route': '/vidange',
-      'gradient': [Color(0xFF66BB6A), Color(0xFF43A047)],
+      'colors': [Color(0xFF10B981), Color(0xFF059669)],
     },
     {
       'title': 'Lavage',
       'icon': Icons.local_car_wash,
-      'route': '/lavage',
-      'gradient': [Color(0xFFAB47BC), Color(0xFF8E24AA)],
+      'colors': [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
     },
   ];
 
-  final List<Map<String, dynamic>> _promotions = [
+  static const _promos = [
     {
       'title': 'Révision complète',
       'subtitle': 'Jusqu\'à 40% de réduction',
-      'image': 'assets/promo1.jpg',
-      'route': '/promo-revision',
       'badge': '-40%',
-      'color': Color(0xFFEF5350),
+      'icon': Icons.car_repair,
+      'colors': [Color(0xFFEF4444), Color(0xFFDC2626)],
     },
     {
       'title': 'Lavage premium',
       'subtitle': 'Offre spéciale du mois',
-      'image': 'assets/promo2.jpg',
-      'route': '/promo-lavage',
       'badge': '-20%',
-      'color': Color(0xFF42A5F5),
+      'icon': Icons.local_car_wash,
+      'colors': [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+    },
+    {
+      'title': 'Vidange express',
+      'subtitle': 'Service rapide en 30 min',
+      'badge': '-15%',
+      'icon': Icons.opacity,
+      'colors': [Color(0xFF10B981), Color(0xFF059669)],
     },
   ];
 
   @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
+  void initState() {
+    super.initState();
+    _loadUserName();
+  }
 
+  Future<void> _loadUserName() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('clients')
+          .doc(uid)
+          .get();
+      if (doc.exists && mounted) {
+        final prenom = doc['prenom'] as String? ?? '';
+        final nom = doc['nom'] as String? ?? '';
+        setState(() => _userName = prenom.isNotEmpty ? prenom : nom);
+      }
+    } catch (_) {}
+  }
+
+  void _showComingSoon() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Fonctionnalité bientôt disponible'),
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFF8F9FA),
+      backgroundColor: const Color(0xFFF1F5F9),
       body: CustomScrollView(
         slivers: [
-          // AppBar moderne avec effet
-          SliverAppBar(
-            expandedHeight: 160,
-            floating: false,
-            pinned: true,
-            backgroundColor: Colors.white,
-            elevation: 0,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFF1E3A8A),
-                      Color(0xFF3B82F6),
-                    ],
-                  ),
-                ),
-                child: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "Bonjour 👋",
-                                  style: TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  "Client O'TO",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Container(
-                              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(30),
-                                border: Border.all(
-                                  color: Colors.white.withOpacity(0.3),
-                                  width: 1,
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.account_balance_wallet,
-                                      color: Colors.white, size: 20),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    "25 000",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                  Text(
-                                    " FCFA",
-                                    style: TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            actions: [
-              IconButton(
-                icon: Container(
-                  padding: EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.notifications_none, color: Colors.white, size: 22),
-                ),
-                onPressed: () => Navigator.pushNamed(context, '/notifications'),
-              ),
-              SizedBox(width: 8),
-            ],
-          ),
-
-          // Contenu principal
+          _buildAppBar(),
           SliverToBoxAdapter(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(height: 20),
-
-                // Services rapides
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Text(
-                    "Services rapides",
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1F2937),
-                    ),
-                  ),
-                ),
-                SizedBox(height: 16),
-                
-                // Grille de services
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: _mainServices.map((service) {
-                      return Expanded(
-                        child: GestureDetector(
-                          onTap: () => Navigator.pushNamed(context, service['route']),
-                          child: Container(
-                            margin: EdgeInsets.symmetric(horizontal: 6),
-                            padding: EdgeInsets.symmetric(vertical: 20),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 10,
-                                  offset: Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Column(
-                              children: [
-                                Container(
-                                  width: 56,
-                                  height: 56,
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: List<Color>.from(service['gradient']),
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                    ),
-                                    borderRadius: BorderRadius.circular(16),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: service['gradient'][0].withOpacity(0.3),
-                                        blurRadius: 8,
-                                        offset: Offset(0, 4),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Icon(
-                                    service['icon'],
-                                    color: Colors.white,
-                                    size: 28,
-                                  ),
-                                ),
-                                SizedBox(height: 12),
-                                Text(
-                                  service['title'],
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: Color(0xFF1F2937),
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-
-                SizedBox(height: 28),
-
-                // Bannière promotionnelle
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Container(
-                    height: 140,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Color(0xFF6366F1),
-                          Color(0xFF8B5CF6),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Color(0xFF6366F1).withOpacity(0.3),
-                          blurRadius: 12,
-                          offset: Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    child: Stack(
-                      children: [
-                        Positioned(
-                          right: -20,
-                          bottom: -20,
-                          child: Icon(
-                            Icons.directions_car,
-                            size: 140,
-                            color: Colors.white.withOpacity(0.1),
-                          ),
-                        ),
-                        Padding(
-                          padding: EdgeInsets.all(24),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  "NOUVEAUTÉ",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(height: 12),
-                              Text(
-                                "Service à domicile\nen un clic",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
-                                  height: 1.2,
-                                ),
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                "Réservez maintenant",
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                SizedBox(height: 28),
-
-                // Promotions
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "Promotions",
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1F2937),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.pushNamed(context, '/promotions'),
-                        style: TextButton.styleFrom(
-                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        ),
-                        child: Row(
-                          children: [
-                            Text(
-                              "Tout voir",
-                              style: TextStyle(
-                                color: Color(0xFF3B82F6),
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                              ),
-                            ),
-                            SizedBox(width: 4),
-                            Icon(Icons.arrow_forward_ios, size: 14, color: Color(0xFF3B82F6)),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                
-                SizedBox(height: 12),
-
-                SizedBox(
-                  height: 200,
-                  child: ListView.builder(
-                    padding: EdgeInsets.symmetric(horizontal: 20),
-                    scrollDirection: Axis.horizontal,
-                    itemCount: _promotions.length,
-                    itemBuilder: (context, index) {
-                      final promo = _promotions[index];
-                      return GestureDetector(
-                        onTap: () => Navigator.pushNamed(context, promo['route']),
-                        child: Container(
-                          width: size.width * 0.75,
-                          margin: EdgeInsets.only(right: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.08),
-                                blurRadius: 12,
-                                offset: Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Stack(
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(20),
-                                child: Image.asset(
-                                  promo['image'],
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                              Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(20),
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      Colors.transparent,
-                                      Colors.black.withOpacity(0.7),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              Positioned(
-                                top: 12,
-                                right: 12,
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: promo['color'],
-                                    borderRadius: BorderRadius.circular(20),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: promo['color'].withOpacity(0.4),
-                                        blurRadius: 8,
-                                        offset: Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Text(
-                                    promo['badge'],
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              Positioned(
-                                bottom: 16,
-                                left: 16,
-                                right: 16,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      promo['title'],
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 18,
-                                      ),
-                                    ),
-                                    SizedBox(height: 4),
-                                    Text(
-                                      promo['subtitle'],
-                                      style: TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-
-                SizedBox(height: 28),
-
-                // Garages à proximité
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "Garages près de vous",
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1F2937),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.pushNamed(context, '/garages'),
-                        style: TextButton.styleFrom(
-                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        ),
-                        child: Row(
-                          children: [
-                            Text(
-                              "Tout voir",
-                              style: TextStyle(
-                                color: Color(0xFF3B82F6),
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
-                              ),
-                            ),
-                            SizedBox(width: 4),
-                            Icon(Icons.arrow_forward_ios, size: 14, color: Color(0xFF3B82F6)),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                SizedBox(height: 12),
-
-                // Liste des garages
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  padding: EdgeInsets.symmetric(horizontal: 20),
-                  itemCount: 2,
-                  itemBuilder: (context, index) {
-                    return Container(
-                      margin: EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(16),
-                        onTap: () => Navigator.pushNamed(context, '/garage-details'),
-                        child: Padding(
-                          padding: EdgeInsets.all(16),
-                          child: Row(
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: Image.asset(
-                                  'assets/garage${index + 1}.jpg',
-                                  width: 90,
-                                  height: 90,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                              SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      index == 0 ? "Garage Excellence" : "Auto Service Pro",
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                        color: Color(0xFF1F2937),
-                                      ),
-                                    ),
-                                    SizedBox(height: 8),
-                                    Row(
-                                      children: [
-                                        Container(
-                                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: Color(0xFFFEF3C7),
-                                            borderRadius: BorderRadius.circular(6),
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              Icon(Icons.star, color: Color(0xFFF59E0B), size: 14),
-                                              SizedBox(width: 4),
-                                              Text(
-                                                index == 0 ? "4.9" : "4.5",
-                                                style: TextStyle(
-                                                  color: Color(0xFFF59E0B),
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 12,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        SizedBox(width: 12),
-                                        Icon(Icons.location_on, color: Color(0xFF9CA3AF), size: 16),
-                                        SizedBox(width: 4),
-                                        Text(
-                                          index == 0 ? "1.2 km" : "2.5 km",
-                                          style: TextStyle(
-                                            color: Color(0xFF6B7280),
-                                            fontSize: 13,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    SizedBox(height: 8),
-                                    Container(
-                                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: index == 0 ? Color(0xFFD1FAE5) : Color(0xFFFEE2E2),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Container(
-                                            width: 6,
-                                            height: 6,
-                                            decoration: BoxDecoration(
-                                              color: index == 0 ? Color(0xFF10B981) : Color(0xFFEF4444),
-                                              shape: BoxShape.circle,
-                                            ),
-                                          ),
-                                          SizedBox(width: 6),
-                                          Text(
-                                            index == 0 ? "Ouvert maintenant" : "Ferme à 20h",
-                                            style: TextStyle(
-                                              color: index == 0 ? Color(0xFF10B981) : Color(0xFFEF4444),
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Icon(Icons.arrow_forward_ios, color: Color(0xFF9CA3AF), size: 18),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-
-                SizedBox(height: 32),
+                const SizedBox(height: 24),
+                _buildSectionTitle('Services rapides', padding: true),
+                const SizedBox(height: 14),
+                _buildServicesGrid(),
+                const SizedBox(height: 28),
+                _buildBanner(),
+                const SizedBox(height: 28),
+                _buildSectionTitle('Promotions', padding: true,
+                    action: TextButton(
+                      onPressed: _showComingSoon,
+                      child: const Text('Tout voir',
+                          style: TextStyle(color: _primary, fontWeight: FontWeight.w600)),
+                    )),
+                const SizedBox(height: 12),
+                _buildPromosList(),
+                const SizedBox(height: 28),
+                _buildSectionTitle('Garages à proximité', padding: true,
+                    action: TextButton(
+                      onPressed: _showComingSoon,
+                      child: const Text('Tout voir',
+                          style: TextStyle(color: _primary, fontWeight: FontWeight.w600)),
+                    )),
+                const SizedBox(height: 12),
+                _buildGaragesList(),
+                const SizedBox(height: 32),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  SliverAppBar _buildAppBar() {
+    return SliverAppBar(
+      expandedHeight: 170,
+      floating: false,
+      pinned: true,
+      backgroundColor: _primaryDark,
+      elevation: 0,
+      actions: [
+        IconButton(
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child:
+                const Icon(Icons.notifications_none, color: Colors.white, size: 22),
+          ),
+          onPressed: _showComingSoon,
+        ),
+        const SizedBox(width: 8),
+      ],
+      flexibleSpace: FlexibleSpaceBar(
+        background: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [_primaryDark, _primary],
+            ),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding:
+                  const EdgeInsets.fromLTRB(20, 16, 80, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    _userName.isEmpty
+                        ? 'Bonjour !'
+                        : 'Bonjour, $_userName !',
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 15,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    "Que faire aujourd'hui ?",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(30),
+                      border: Border.all(
+                          color: Colors.white.withOpacity(0.3)),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.account_balance_wallet,
+                            color: Colors.white, size: 18),
+                        SizedBox(width: 8),
+                        Text(
+                          "25 000 FCFA",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title,
+      {bool padding = false, Widget? action}) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: padding ? 20 : 0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1E293B),
+            ),
+          ),
+          if (action != null) action,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildServicesGrid() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        children: _services.map((s) {
+          final colors = s['colors'] as List<Color>;
+          return Expanded(
+            child: GestureDetector(
+              onTap: _showComingSoon,
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 5),
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: colors,
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: colors[0].withOpacity(0.35),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Icon(s['icon'] as IconData,
+                          color: Colors.white, size: 26),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      s['title'] as String,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1E293B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildBanner() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: GestureDetector(
+        onTap: _showComingSoon,
+        child: Container(
+          height: 130,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF6366F1).withOpacity(0.3),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                right: -10,
+                top: -10,
+                child: Icon(
+                  Icons.directions_car,
+                  size: 130,
+                  color: Colors.white.withOpacity(0.1),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        'NOUVEAUTÉ',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      "Service à domicile\nen un clic",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        height: 1.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPromosList() {
+    return SizedBox(
+      height: 160,
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        scrollDirection: Axis.horizontal,
+        itemCount: _promos.length,
+        itemBuilder: (context, i) {
+          final p = _promos[i];
+          final colors = p['colors'] as List<Color>;
+          return GestureDetector(
+            onTap: _showComingSoon,
+            child: Container(
+              width: 220,
+              margin: const EdgeInsets.only(right: 14),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: colors,
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color: colors[0].withOpacity(0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Stack(
+                children: [
+                  Positioned(
+                    right: -10,
+                    bottom: -10,
+                    child: Icon(
+                      p['icon'] as IconData,
+                      size: 90,
+                      color: Colors.white.withOpacity(0.15),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.25),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            p['badge'] as String,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          p['title'] as String,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          p['subtitle'] as String,
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.8),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildGaragesList() {
+    final garages = [
+      {
+        'name': 'Garage Excellence',
+        'rating': '4.9',
+        'distance': '1.2 km',
+        'open': true,
+        'status': 'Ouvert maintenant',
+        'colors': [_primaryDark, _primary],
+      },
+      {
+        'name': 'Auto Service Pro',
+        'rating': '4.5',
+        'distance': '2.5 km',
+        'open': false,
+        'status': 'Ferme à 20h',
+        'colors': [const Color(0xFF374151), const Color(0xFF6B7280)],
+      },
+      {
+        'name': 'Mécano Express',
+        'rating': '4.7',
+        'distance': '3.8 km',
+        'open': true,
+        'status': 'Ouvert maintenant',
+        'colors': [const Color(0xFF059669), const Color(0xFF10B981)],
+      },
+    ];
+
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      itemCount: garages.length,
+      itemBuilder: (context, i) {
+        final g = garages[i];
+        final isOpen = g['open'] as bool;
+        final colors = g['colors'] as List<Color>;
+        return GestureDetector(
+          onTap: _showComingSoon,
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 14),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: colors,
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child:
+                      const Icon(Icons.car_repair, color: Colors.white, size: 30),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        g['name'] as String,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          color: Color(0xFF1E293B),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 7, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEF3C7),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.star,
+                                    color: Color(0xFFF59E0B), size: 13),
+                                const SizedBox(width: 3),
+                                Text(
+                                  g['rating'] as String,
+                                  style: const TextStyle(
+                                    color: Color(0xFFF59E0B),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Icon(Icons.location_on,
+                              color: Colors.grey[400], size: 14),
+                          const SizedBox(width: 2),
+                          Text(
+                            g['distance'] as String,
+                            style: TextStyle(
+                              color: Colors.grey[500],
+                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: isOpen
+                                  ? const Color(0xFFD1FAE5)
+                                  : const Color(0xFFFEE2E2),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              g['status'] as String,
+                              style: TextStyle(
+                                color: isOpen
+                                    ? const Color(0xFF059669)
+                                    : const Color(0xFFEF4444),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.arrow_forward_ios,
+                    color: Color(0xFF94A3B8), size: 16),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

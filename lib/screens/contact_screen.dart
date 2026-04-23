@@ -16,10 +16,9 @@ class _ContactScreenState extends State<ContactScreen> {
   final _messageController = TextEditingController();
   bool _isLoading = false;
 
-  // Couleurs AnyxTech
-  final Color _primaryColor = const Color(0xFF0A192F);
-  final Color _secondaryColor = const Color(0xFF64FFDA);
-  final Color _backgroundColor = const Color(0xFFF8F9FA);
+  static const Color _primaryColor = Color(0xFF1E3A8A);
+  static const Color _accentColor = Color(0xFF3B82F6);
+  static const Color _backgroundColor = Color(0xFFF8F9FA);
 
   @override
   void dispose() {
@@ -33,21 +32,20 @@ class _ContactScreenState extends State<ContactScreen> {
   Future<void> _sendMessage() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
-      await Future.delayed(const Duration(seconds: 2));
+      await Future.delayed(const Duration(seconds: 1));
       setState(() => _isLoading = false);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Message envoyé avec succès !'),
-            backgroundColor: _secondaryColor,
+            backgroundColor: _accentColor,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
             ),
           ),
         );
-
         _nameController.clear();
         _emailController.clear();
         _subjectController.clear();
@@ -76,50 +74,43 @@ class _ContactScreenState extends State<ContactScreen> {
       backgroundColor: _backgroundColor,
       appBar: AppBar(
         title: const Text(
-          "Contactez AnyxTech",
+          "Contactez O'TO Service",
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: _primaryColor,
         elevation: 0,
-        iconTheme: IconThemeData(color: _secondaryColor),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(
         child: Column(
           children: [
             Container(
               width: double.infinity,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [_primaryColor, _primaryColor.withOpacity(0.8)],
+                  colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
                 ),
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
+              child: const Padding(
+                padding: EdgeInsets.all(24.0),
                 child: Column(
                   children: [
-                    Icon(
-                      Icons.contact_support,
-                      size: 60,
-                      color: _secondaryColor,
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      "Support AnyxTech",
+                    Icon(Icons.contact_support, size: 60, color: Colors.white),
+                    SizedBox(height: 16),
+                    Text(
+                      "Support O'TO Service",
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     Text(
                       "Notre équipe est à votre écoute 24/7",
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: _secondaryColor,
-                      ),
+                      style: TextStyle(fontSize: 16, color: Colors.white70),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -133,15 +124,15 @@ class _ContactScreenState extends State<ContactScreen> {
                   _buildContactCard(
                     icon: Icons.email,
                     title: "Email",
-                    value: "contact@anyxtech.com",
-                    onTap: () => _launchUrl("mailto:contact@anyxtech.com"),
+                    value: "contact@otoservice.bj",
+                    onTap: () => _launchUrl("mailto:contact@otoservice.bj"),
                   ),
                   const SizedBox(height: 16),
                   _buildContactCard(
                     icon: Icons.phone,
                     title: "Téléphone",
-                    value: "+229 XX XX XX XX",
-                    onTap: () => _launchUrl("tel:+229XXXXXXXX"),
+                    value: "+229 01 20 30 40 50",
+                    onTap: () => _launchUrl("tel:+22901203040050"),
                   ),
                   const SizedBox(height: 16),
                   _buildContactCard(
@@ -164,7 +155,7 @@ class _ContactScreenState extends State<ContactScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            const Text(
                               "Envoyez-nous un message",
                               style: TextStyle(
                                 fontSize: 20,
@@ -177,21 +168,24 @@ class _ContactScreenState extends State<ContactScreen> {
                               controller: _nameController,
                               label: "Nom complet",
                               icon: Icons.person,
-                              validator: (value) => value!.isEmpty ? 'Champ obligatoire' : null,
+                              validator: (value) =>
+                                  (value == null || value.isEmpty) ? 'Champ obligatoire' : null,
                             ),
                             const SizedBox(height: 16),
                             _buildInputField(
                               controller: _emailController,
                               label: "Email",
                               icon: Icons.email,
-                              validator: (value) => !value!.contains('@') ? 'Email invalide' : null,
+                              validator: (value) =>
+                                  (value == null || !value.contains('@')) ? 'Email invalide' : null,
                             ),
                             const SizedBox(height: 16),
                             _buildInputField(
                               controller: _subjectController,
                               label: "Sujet",
                               icon: Icons.subject,
-                              validator: (value) => value!.isEmpty ? 'Champ obligatoire' : null,
+                              validator: (value) =>
+                                  (value == null || value.isEmpty) ? 'Champ obligatoire' : null,
                             ),
                             const SizedBox(height: 16),
                             TextFormField(
@@ -199,18 +193,19 @@ class _ContactScreenState extends State<ContactScreen> {
                               maxLines: 5,
                               decoration: InputDecoration(
                                 labelText: "Message",
-                                labelStyle: TextStyle(color: _primaryColor),
-                                prefixIcon: Icon(Icons.message, color: _primaryColor),
+                                labelStyle: const TextStyle(color: _primaryColor),
+                                prefixIcon: const Icon(Icons.message, color: _primaryColor),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(10),
-                                  borderSide: BorderSide(color: _primaryColor),
+                                  borderSide: const BorderSide(color: _primaryColor),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(10),
-                                  borderSide: BorderSide(color: _secondaryColor, width: 2),
+                                  borderSide: const BorderSide(color: _accentColor, width: 2),
                                 ),
                               ),
-                              validator: (value) => value!.length < 10 ? 'Minimum 10 caractères' : null,
+                              validator: (value) =>
+                                  (value == null || value.length < 10) ? 'Minimum 10 caractères' : null,
                             ),
                             const SizedBox(height: 24),
                             SizedBox(
@@ -219,15 +214,15 @@ class _ContactScreenState extends State<ContactScreen> {
                               child: ElevatedButton(
                                 onPressed: _isLoading ? null : _sendMessage,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: _secondaryColor,
-                                  foregroundColor: _primaryColor,
+                                  backgroundColor: _accentColor,
+                                  foregroundColor: Colors.white,
                                   elevation: 3,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                 ),
                                 child: _isLoading
-                                    ? CircularProgressIndicator(color: _primaryColor)
+                                    ? const CircularProgressIndicator(color: Colors.white)
                                     : const Text(
                                         "ENVOYER",
                                         style: TextStyle(
@@ -254,10 +249,10 @@ class _ContactScreenState extends State<ContactScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
+                          const Row(
                             children: [
-                              Icon(Icons.help_outline, color: _secondaryColor),
-                              const SizedBox(width: 10),
+                              Icon(Icons.help_outline, color: _accentColor),
+                              SizedBox(width: 10),
                               Text(
                                 "FAQ",
                                 style: TextStyle(
@@ -278,7 +273,7 @@ class _ContactScreenState extends State<ContactScreen> {
                             "Nous nous engageons à répondre sous 2 heures pour les demandes urgentes.",
                           ),
                           _buildFAQItem(
-                            "Proposez-vous un support technique sur site ?",
+                            "Proposez-vous un service à domicile ?",
                             "Oui, nos techniciens peuvent intervenir dans tout le Bénin sous 24h.",
                           ),
                         ],
@@ -302,9 +297,7 @@ class _ContactScreenState extends State<ContactScreen> {
   }) {
     return Card(
       elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       shadowColor: _primaryColor.withOpacity(0.1),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
@@ -316,10 +309,10 @@ class _ContactScreenState extends State<ContactScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: _secondaryColor.withOpacity(0.1),
+                  color: _accentColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(icon, color: _secondaryColor, size: 24),
+                child: Icon(icon, color: _accentColor, size: 24),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -328,7 +321,7 @@ class _ContactScreenState extends State<ContactScreen> {
                   children: [
                     Text(
                       title,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: _primaryColor,
                         fontWeight: FontWeight.w600,
                       ),
@@ -336,15 +329,12 @@ class _ContactScreenState extends State<ContactScreen> {
                     const SizedBox(height: 4),
                     Text(
                       value,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right, color: _secondaryColor),
+              const Icon(Icons.chevron_right, color: _accentColor),
             ],
           ),
         ),
@@ -362,15 +352,15 @@ class _ContactScreenState extends State<ContactScreen> {
       controller: controller,
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(color: _primaryColor),
+        labelStyle: const TextStyle(color: _primaryColor),
         prefixIcon: Icon(icon, color: _primaryColor),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: _primaryColor),
+          borderSide: const BorderSide(color: _primaryColor),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
-          borderSide: BorderSide(color: _secondaryColor, width: 2),
+          borderSide: const BorderSide(color: _accentColor, width: 2),
         ),
       ),
       validator: validator,
@@ -381,18 +371,12 @@ class _ContactScreenState extends State<ContactScreen> {
     return ExpansionTile(
       title: Text(
         question,
-        style: TextStyle(
-          color: _primaryColor,
-          fontWeight: FontWeight.w600,
-        ),
+        style: const TextStyle(color: _primaryColor, fontWeight: FontWeight.w600),
       ),
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Text(
-            answer,
-            style: TextStyle(color: Colors.grey[700]),
-          ),
+          child: Text(answer, style: TextStyle(color: Colors.grey[700])),
         ),
       ],
     );
