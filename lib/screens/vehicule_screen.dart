@@ -1,69 +1,84 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
-class VehiculeScreen extends StatefulWidget {
+import '../services/vehicule_service.dart';
+import '../theme/app_colors.dart';
+import 'vehicule_form_screen.dart';
+
+class VehiculeScreen extends StatelessWidget {
   const VehiculeScreen({super.key});
 
-  @override
-  State<VehiculeScreen> createState() => _VehiculeScreenState();
-}
-
-class _VehiculeScreenState extends State<VehiculeScreen> {
-  static const _primaryDark = Color(0xFF1E3A8A);
-  static const _primary = Color(0xFF3B82F6);
-
-  late Future<QuerySnapshot> _future;
-
-  @override
-  void initState() {
-    super.initState();
-    _future = _loadVehicules();
+  void _openForm(BuildContext context,
+      {String? id, Map<String, dynamic>? initial}) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => VehiculeFormScreen(vehiculeId: id, initial: initial),
+      ),
+    );
   }
 
-  Future<QuerySnapshot> _loadVehicules() {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
-    return FirebaseFirestore.instance
-        .collection('clients')
-        .doc(uid)
-        .collection('vehicules')
-        .get();
+  Future<void> _confirmDelete(
+      BuildContext context, String id, String label) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Supprimer le véhicule'),
+        content: Text('Voulez-vous vraiment supprimer "$label" ?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Supprimer',
+                style: TextStyle(color: AppColors.danger)),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) {
+      await VehiculeService.instance.supprimer(id);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Véhicule supprimé'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
-
-  void _refresh() => setState(() => _future = _loadVehicules());
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9),
+      backgroundColor: AppColors.background,
       body: CustomScrollView(
         slivers: [
           _buildAppBar(),
           SliverFillRemaining(
-            child: FutureBuilder<QuerySnapshot>(
-              future: _future,
+            hasScrollBody: true,
+            child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+              stream: VehiculeService.instance.watch(),
               builder: (context, snap) {
                 if (snap.connectionState == ConnectionState.waiting) {
                   return const Center(
-                    child: CircularProgressIndicator(color: _primary),
+                    child: CircularProgressIndicator(color: AppColors.primary),
                   );
                 }
-
-                if (snap.hasError) {
-                  return _buildErrorState();
-                }
+                if (snap.hasError) return _buildErrorState();
 
                 final docs = snap.data?.docs ?? [];
-                if (docs.isEmpty) {
-                  return _buildEmptyState();
-                }
+                if (docs.isEmpty) return _buildEmptyState(context);
 
                 return ListView.builder(
                   padding: const EdgeInsets.all(20),
                   itemCount: docs.length,
                   itemBuilder: (context, i) {
-                    final v = docs[i].data() as Map<String, dynamic>;
-                    return _buildVehicleCard(v, i);
+                    final v = docs[i].data();
+                    return _buildVehicleCard(context, docs[i].id, v, i);
                   },
                 );
               },
@@ -72,13 +87,8 @@ class _VehiculeScreenState extends State<VehiculeScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Ajout de véhicule bientôt disponible'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        ),
-        backgroundColor: _primaryDark,
+        onPressed: () => _openForm(context),
+        backgroundColor: AppColors.primaryDark,
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text('Ajouter', style: TextStyle(color: Colors.white)),
       ),
@@ -90,24 +100,12 @@ class _VehiculeScreenState extends State<VehiculeScreen> {
       expandedHeight: 140,
       floating: false,
       pinned: true,
-      backgroundColor: _primaryDark,
+      backgroundColor: AppColors.primaryDark,
       elevation: 0,
       automaticallyImplyLeading: false,
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.refresh, color: Colors.white),
-          onPressed: _refresh,
-        ),
-      ],
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [_primaryDark, _primary],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
+          decoration: const BoxDecoration(gradient: AppColors.brandGradient),
           child: SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
@@ -140,14 +138,16 @@ class _VehiculeScreenState extends State<VehiculeScreen> {
     );
   }
 
-  Widget _buildVehicleCard(Map<String, dynamic> v, int index) {
+  Widget _buildVehicleCard(
+      BuildContext context, String id, Map<String, dynamic> v, int index) {
     final marque = v['marque'] as String? ?? 'À définir';
     final modele = v['modele'] as String? ?? 'À définir';
     final immat = v['immatriculation'] as String? ?? '';
+    final motorisation = v['motorisation'] as String? ?? 'Non renseignée';
     final isPrincipal = v['principal'] == true;
 
-    final colors = index == 0
-        ? [_primaryDark, _primary]
+    final colors = isPrincipal
+        ? [AppColors.primaryDark, AppColors.primary]
         : [const Color(0xFF374151), const Color(0xFF6B7280)];
 
     return Container(
@@ -173,7 +173,8 @@ class _VehiculeScreenState extends State<VehiculeScreen> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(20)),
             ),
             child: Stack(
               children: [
@@ -185,6 +186,11 @@ class _VehiculeScreenState extends State<VehiculeScreen> {
                     size: 160,
                     color: Colors.white.withOpacity(0.12),
                   ),
+                ),
+                Positioned(
+                  top: 8,
+                  right: 4,
+                  child: _buildMenu(context, id, '$marque $modele', isPrincipal),
                 ),
                 Padding(
                   padding: const EdgeInsets.all(20),
@@ -204,14 +210,11 @@ class _VehiculeScreenState extends State<VehiculeScreen> {
                             children: [
                               Icon(Icons.star, color: Colors.white, size: 13),
                               SizedBox(width: 4),
-                              Text(
-                                'Principal',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                              Text('Principal',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold)),
                             ],
                           ),
                         ),
@@ -219,18 +222,16 @@ class _VehiculeScreenState extends State<VehiculeScreen> {
                       Text(
                         '$marque $modele',
                         style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold),
                       ),
                       if (immat.isNotEmpty)
                         Text(
                           immat,
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.8),
-                            fontSize: 14,
-                          ),
+                              color: Colors.white.withOpacity(0.8),
+                              fontSize: 14),
                         ),
                     ],
                   ),
@@ -246,24 +247,21 @@ class _VehiculeScreenState extends State<VehiculeScreen> {
                 const Divider(height: 20),
                 _infoRow(Icons.directions_car_outlined, 'Modèle', modele),
                 const Divider(height: 20),
+                _infoRow(Icons.local_gas_station_outlined, 'Motorisation',
+                    motorisation),
+                const Divider(height: 20),
                 _infoRow(Icons.confirmation_number_outlined, 'Immatriculation',
                     immat.isEmpty ? 'Non renseignée' : immat),
                 const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
-                    onPressed: () =>
-                        ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Modification bientôt disponible'),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    ),
+                    onPressed: () => _openForm(context, id: id, initial: v),
                     icon: const Icon(Icons.edit_outlined, size: 18),
                     label: const Text('Modifier les informations'),
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: _primaryDark,
-                      side: const BorderSide(color: _primaryDark),
+                      foregroundColor: AppColors.primaryDark,
+                      side: const BorderSide(color: AppColors.primaryDark),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -279,38 +277,68 @@ class _VehiculeScreenState extends State<VehiculeScreen> {
     );
   }
 
+  Widget _buildMenu(
+      BuildContext context, String id, String label, bool isPrincipal) {
+    return PopupMenuButton<String>(
+      icon: const Icon(Icons.more_vert, color: Colors.white),
+      onSelected: (value) async {
+        switch (value) {
+          case 'principal':
+            await VehiculeService.instance.definirPrincipal(id);
+            break;
+          case 'delete':
+            await _confirmDelete(context, id, label);
+            break;
+        }
+      },
+      itemBuilder: (ctx) => [
+        if (!isPrincipal)
+          const PopupMenuItem(
+            value: 'principal',
+            child: Row(children: [
+              Icon(Icons.star_outline, size: 18, color: AppColors.primary),
+              SizedBox(width: 10),
+              Text('Définir comme principal'),
+            ]),
+          ),
+        const PopupMenuItem(
+          value: 'delete',
+          child: Row(children: [
+            Icon(Icons.delete_outline, size: 18, color: AppColors.danger),
+            SizedBox(width: 10),
+            Text('Supprimer'),
+          ]),
+        ),
+      ],
+    );
+  }
+
   Widget _infoRow(IconData icon, String label, String value) {
     return Row(
       children: [
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: _primary.withOpacity(0.08),
+            color: AppColors.primary.withOpacity(0.08),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, color: _primary, size: 18),
+          child: Icon(icon, color: AppColors.primary, size: 18),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Color(0xFF94A3B8),
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              Text(
-                value,
-                style: const TextStyle(
-                  color: Color(0xFF1E293B),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              Text(label,
+                  style: const TextStyle(
+                      color: AppColors.textLight,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500)),
+              Text(value,
+                  style: const TextStyle(
+                      color: AppColors.textDark,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600)),
             ],
           ),
         ),
@@ -318,7 +346,7 @@ class _VehiculeScreenState extends State<VehiculeScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -327,25 +355,34 @@ class _VehiculeScreenState extends State<VehiculeScreen> {
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: _primary.withOpacity(0.1),
+              color: AppColors.primary.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.directions_car_outlined,
-                color: _primary, size: 40),
+                color: AppColors.primary, size: 40),
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Aucun véhicule enregistré',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1E293B),
-            ),
-          ),
+          const Text('Aucun véhicule enregistré',
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textDark)),
           const SizedBox(height: 8),
-          const Text(
-            'Ajoutez votre véhicule pour commencer',
-            style: TextStyle(color: Color(0xFF64748B)),
+          const Text('Ajoutez votre véhicule pour commencer',
+              style: TextStyle(color: AppColors.textMuted)),
+          const SizedBox(height: 20),
+          ElevatedButton.icon(
+            onPressed: () => _openForm(context),
+            icon: const Icon(Icons.add),
+            label: const Text('Ajouter un véhicule'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryDark,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            ),
           ),
         ],
       ),
@@ -353,18 +390,13 @@ class _VehiculeScreenState extends State<VehiculeScreen> {
   }
 
   Widget _buildErrorState() {
-    return Center(
+    return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline, color: Color(0xFFEF4444), size: 48),
-          const SizedBox(height: 12),
-          const Text('Erreur de chargement'),
-          const SizedBox(height: 12),
-          ElevatedButton(
-            onPressed: _refresh,
-            child: const Text('Réessayer'),
-          ),
+          Icon(Icons.error_outline, color: AppColors.danger, size: 48),
+          SizedBox(height: 12),
+          Text('Erreur de chargement'),
         ],
       ),
     );
