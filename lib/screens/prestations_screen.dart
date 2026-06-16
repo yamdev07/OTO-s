@@ -1,88 +1,40 @@
 import 'package:flutter/material.dart';
 
+import '../data/service_catalog.dart';
+import '../models/cart_item.dart';
+import '../models/service_category.dart';
+import '../services/panier_service.dart';
+import '../theme/app_colors.dart';
+import '../utils/format.dart';
+import 'category_detail_screen.dart';
+import 'panier_screen.dart';
+
+/// Catalogue O'TO SERVICE : grille des catégories structurelles.
+/// L'utilisateur choisit une catégorie puis une sous-catégorie (prestation).
 class PrestationsScreen extends StatelessWidget {
   const PrestationsScreen({super.key});
-
-  static const _primaryDark = Color(0xFF1E3A8A);
-  static const _primary = Color(0xFF3B82F6);
-
-  static final _services = [
-    {
-      'title': 'Lavage',
-      'description': 'Nettoyage complet intérieur & extérieur',
-      'prix': '5 000',
-      'icon': Icons.local_car_wash,
-      'color': const Color(0xFF3B82F6),
-      'duration': '45 min',
-    },
-    {
-      'title': 'Vidange moteur',
-      'description': "Remplacement de l'huile & contrôle niveaux",
-      'prix': '15 000',
-      'icon': Icons.opacity,
-      'color': const Color(0xFF10B981),
-      'duration': '30 min',
-    },
-    {
-      'title': 'Diagnostic',
-      'description': 'Analyse électronique complète du véhicule',
-      'prix': '10 000',
-      'icon': Icons.electrical_services,
-      'color': const Color(0xFFF59E0B),
-      'duration': '1 h',
-    },
-    {
-      'title': 'Freins',
-      'description': 'Remplacement des plaquettes avant/arrière',
-      'prix': '20 000',
-      'icon': Icons.do_not_touch,
-      'color': const Color(0xFFEF4444),
-      'duration': '2 h',
-    },
-    {
-      'title': 'Dépannage',
-      'description': 'Intervention d\'urgence à votre domicile',
-      'prix': '25 000',
-      'icon': Icons.emergency,
-      'color': const Color(0xFF8B5CF6),
-      'duration': 'Express',
-    },
-    {
-      'title': 'Pneumatiques',
-      'description': 'Remplacement et équilibrage des pneus',
-      'prix': '12 000',
-      'icon': Icons.tire_repair,
-      'color': const Color(0xFF6366F1),
-      'duration': '1 h',
-    },
-  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9),
+      backgroundColor: AppColors.background,
       body: CustomScrollView(
         slivers: [
-          _buildAppBar(),
+          _buildAppBar(context),
           SliverPadding(
             padding: const EdgeInsets.all(16),
             sliver: SliverGrid(
               delegate: SliverChildBuilderDelegate(
-                (context, i) => _buildServiceCard(context, _services[i]),
-                childCount: _services.length,
+                (context, i) =>
+                    _buildCategoryCard(context, ServiceCatalog.categories[i]),
+                childCount: ServiceCatalog.categories.length,
               ),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
-                childAspectRatio: 0.82,
+                childAspectRatio: 0.88,
               ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-              child: _buildDemandeBanner(context),
             ),
           ),
         ],
@@ -90,23 +42,18 @@ class PrestationsScreen extends StatelessWidget {
     );
   }
 
-  SliverAppBar _buildAppBar() {
+  SliverAppBar _buildAppBar(BuildContext context) {
     return SliverAppBar(
       expandedHeight: 120,
       floating: false,
       pinned: true,
-      backgroundColor: _primaryDark,
+      backgroundColor: AppColors.primaryDark,
       elevation: 0,
       automaticallyImplyLeading: false,
+      actions: [_buildCartButton(context)],
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [_primaryDark, _primary],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
+          decoration: const BoxDecoration(gradient: AppColors.brandGradient),
           child: SafeArea(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
@@ -115,7 +62,7 @@ class PrestationsScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   const Text(
-                    'Nos Services',
+                    'O\'TO Service',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 24,
@@ -124,7 +71,7 @@ class PrestationsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${_services.length} prestations disponibles',
+                    '${ServiceCatalog.totalPrestations} prestations · ${ServiceCatalog.categories.length} catégories',
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.8),
                       fontSize: 13,
@@ -139,175 +86,126 @@ class PrestationsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildServiceCard(BuildContext context, Map<String, dynamic> s) {
-    final color = s['color'] as Color;
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  /// Bouton panier avec badge du nombre d'articles (temps réel).
+  Widget _buildCartButton(BuildContext context) {
+    return StreamBuilder<List<CartItem>>(
+      stream: PanierService.instance.watch(),
+      builder: (context, snap) {
+        final count = (snap.data ?? [])
+            .fold<int>(0, (acc, e) => acc + e.quantite);
+        return Stack(
+          alignment: Alignment.center,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Icon(s['icon'] as IconData, color: color, size: 26),
-                ),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.timer_outlined,
-                          color: Colors.grey[500], size: 12),
-                      const SizedBox(width: 3),
-                      Text(
-                        s['duration'] as String,
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              s['title'] as String,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-                color: Color(0xFF1E293B),
+            IconButton(
+              icon: const Icon(Icons.shopping_cart_outlined,
+                  color: Colors.white),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PanierScreen()),
               ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              s['description'] as String,
-              style: TextStyle(
-                color: Colors.grey[500],
-                fontSize: 11,
-                height: 1.4,
+            if (count > 0)
+              Positioned(
+                right: 6,
+                top: 6,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  constraints:
+                      const BoxConstraints(minWidth: 18, minHeight: 18),
+                  decoration: const BoxDecoration(
+                    color: AppColors.danger,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    '$count',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
               ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const Spacer(),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${s['prix']} FCFA',
-                      style: TextStyle(
-                        color: color,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-                GestureDetector(
-                  onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text("${s['title']} ajouté au devis"),
-                      behavior: SnackBarBehavior.floating,
-                      duration: const Duration(seconds: 2),
-                    ),
-                  ),
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: color,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.add, color: Colors.white, size: 18),
-                  ),
-                ),
-              ],
-            ),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildDemandeBanner(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+  Widget _buildCategoryCard(BuildContext context, ServiceCategory cat) {
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => CategoryDetailScreen(category: cat),
         ),
-        borderRadius: BorderRadius.circular(20),
       ),
-      child: Row(
-        children: [
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Service sur mesure ?',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  'Demandez un devis personnalisé',
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
-                ),
-              ],
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-          ),
-          ElevatedButton(
-            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Allez dans Compte > Mes devis'),
-                behavior: SnackBarBehavior.floating,
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: cat.color.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(cat.icon, color: cat.color, size: 28),
               ),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: _primaryDark,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-              elevation: 0,
-            ),
-            child: const Text('Devis',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              Text(
+                cat.nom,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                  color: AppColors.textDark,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                cat.description,
+                style: TextStyle(
+                  color: Colors.grey[500],
+                  fontSize: 11,
+                  height: 1.35,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const Spacer(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'dès ${Format.fcfa(cat.prixMin)}',
+                    style: TextStyle(
+                      color: cat.color,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                  Icon(Icons.arrow_forward_ios,
+                      size: 13, color: Colors.grey[400]),
+                ],
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
