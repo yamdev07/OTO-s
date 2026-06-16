@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../services/client_service.dart';
+import '../utils/format.dart';
+import 'prestations_screen.dart';
+import 'wallet_screen.dart';
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -90,6 +95,55 @@ class _HomeScreenState extends State<HomeScreen> {
         content: Text('Fonctionnalité bientôt disponible'),
         behavior: SnackBarBehavior.floating,
         duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _openCatalogue() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const PrestationsScreen()),
+    );
+  }
+
+  /// Puce de solde dans l'en-tête, alimentée par le crédit réel du client.
+  Widget _buildBalanceChip() {
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const WalletScreen()),
+      ),
+      child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+        stream: ClientService.instance.watch(),
+        builder: (context, snap) {
+          final solde =
+              (snap.data?.data()?['credit'] as num?)?.toDouble() ?? 0;
+          return Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(color: Colors.white.withOpacity(0.3)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.account_balance_wallet,
+                    color: Colors.white, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  Format.fcfa(solde),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -196,32 +250,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(height: 14),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(30),
-                      border: Border.all(
-                          color: Colors.white.withOpacity(0.3)),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.account_balance_wallet,
-                            color: Colors.white, size: 18),
-                        SizedBox(width: 8),
-                        Text(
-                          "25 000 FCFA",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  _buildBalanceChip(),
                 ],
               ),
             ),
@@ -260,7 +289,7 @@ class _HomeScreenState extends State<HomeScreen> {
           final colors = s['colors'] as List<Color>;
           return Expanded(
             child: GestureDetector(
-              onTap: _showComingSoon,
+              onTap: _openCatalogue,
               child: Container(
                 margin: const EdgeInsets.symmetric(horizontal: 5),
                 padding: const EdgeInsets.symmetric(vertical: 18),
@@ -322,7 +351,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: GestureDetector(
-        onTap: _showComingSoon,
+        onTap: _openCatalogue,
         child: Container(
           height: 130,
           decoration: BoxDecoration(
