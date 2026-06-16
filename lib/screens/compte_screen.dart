@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'login_screen.dart';
 import 'devis_screen.dart';
+import 'edit_profile_screen.dart';
 
 class CompteScreen extends StatefulWidget {
   const CompteScreen({super.key});
@@ -18,6 +19,7 @@ class _CompteScreenState extends State<CompteScreen> {
   String _email = '';
   String _nom = '';
   String _prenom = '';
+  String _telephone = '';
   bool _isLoading = true;
 
   @override
@@ -38,8 +40,10 @@ class _CompteScreenState extends State<CompteScreen> {
         if (mounted) {
           setState(() {
             _email = user.email ?? '';
-            _nom = doc.exists ? (doc['nom'] as String? ?? '') : '';
-            _prenom = doc.exists ? (doc['prenom'] as String? ?? '') : '';
+            final data = doc.data();
+            _nom = data?['nom'] as String? ?? '';
+            _prenom = data?['prenom'] as String? ?? '';
+            _telephone = data?['telephone'] as String? ?? '';
             _isLoading = false;
           });
         }
@@ -254,6 +258,25 @@ class _CompteScreenState extends State<CompteScreen> {
 
   Widget _buildMenuSection() {
     final items = [
+      {
+        'icon': Icons.person_outline,
+        'title': 'Mes informations',
+        'subtitle': 'Nom, prénom, téléphone',
+        'color': _primaryDark,
+        'onTap': () async {
+          final changed = await Navigator.push<bool>(
+            context,
+            MaterialPageRoute(
+              builder: (_) => EditProfileScreen(
+                nom: _nom,
+                prenom: _prenom,
+                telephone: _telephone,
+              ),
+            ),
+          );
+          if (changed == true) _loadUser();
+        },
+      },
       {
         'icon': Icons.request_quote_outlined,
         'title': 'Mes devis',
