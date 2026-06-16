@@ -4,6 +4,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'login_screen.dart';
 import 'devis_screen.dart';
 import 'edit_profile_screen.dart';
+import 'wallet_screen.dart';
+import 'rendezvous_screen.dart';
+import 'parrainage_screen.dart';
 
 class CompteScreen extends StatefulWidget {
   const CompteScreen({super.key});
@@ -285,6 +288,36 @@ class _CompteScreenState extends State<CompteScreen> {
         'onTap': () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const DevisScreen()),
+            ),
+      },
+      {
+        'icon': Icons.account_balance_wallet_outlined,
+        'title': 'Mon crédit',
+        'subtitle': 'Solde, recharge et transactions',
+        'color': const Color(0xFF10B981),
+        'onTap': () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const WalletScreen()),
+            ),
+      },
+      {
+        'icon': Icons.event_outlined,
+        'title': 'Mes rendez-vous',
+        'subtitle': 'Planifier et suivre vos RDV',
+        'color': _primary,
+        'onTap': () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const RendezvousScreen()),
+            ),
+      },
+      {
+        'icon': Icons.card_giftcard_outlined,
+        'title': 'Parrainer un ami',
+        'subtitle': 'Partagez votre code de parrainage',
+        'color': const Color(0xFF8B5CF6),
+        'onTap': () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ParrainageScreen()),
             ),
       },
       {
