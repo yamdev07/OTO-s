@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models/cart_item.dart';
 import '../models/service_category.dart';
 import '../models/service_item.dart';
 import '../services/panier_service.dart';
@@ -33,6 +34,102 @@ class CategoryDetailScreen extends StatelessWidget {
     );
   }
 
+  void _ouvrirPanier(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const PanierScreen()),
+    );
+  }
+
+  /// Icône panier avec badge (nombre d'articles), dans l'AppBar.
+  Widget _cartButton(BuildContext context) {
+    return StreamBuilder<List<CartItem>>(
+      stream: PanierService.instance.watch(),
+      builder: (context, snap) {
+        final count =
+            (snap.data ?? []).fold<int>(0, (acc, e) => acc + e.quantite);
+        return Stack(
+          alignment: Alignment.center,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.shopping_cart_outlined,
+                  color: Colors.white),
+              onPressed: () => _ouvrirPanier(context),
+            ),
+            if (count > 0)
+              Positioned(
+                right: 6,
+                top: 6,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  constraints:
+                      const BoxConstraints(minWidth: 18, minHeight: 18),
+                  decoration: const BoxDecoration(
+                    color: AppColors.danger,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text('$count',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold)),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Barre fixe en bas : « Voir le panier (n) · total » quand non vide.
+  Widget _cartBar(BuildContext context) {
+    return StreamBuilder<List<CartItem>>(
+      stream: PanierService.instance.watch(),
+      builder: (context, snap) {
+        final items = snap.data ?? [];
+        if (items.isEmpty) return const SizedBox.shrink();
+        final count = items.fold<int>(0, (acc, e) => acc + e.quantite);
+        final total = PanierService.total(items);
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: SizedBox(
+              height: 52,
+              child: ElevatedButton(
+                onPressed: () => _ouvrirPanier(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryDark,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.shopping_cart, size: 20),
+                        const SizedBox(width: 8),
+                        Text('Voir le panier ($count)',
+                            style: const TextStyle(
+                                fontSize: 15, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    Text(Format.fcfa(total),
+                        style: const TextStyle(
+                            fontSize: 15, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -43,7 +140,9 @@ class CategoryDetailScreen extends StatelessWidget {
         backgroundColor: category.color,
         foregroundColor: Colors.white,
         elevation: 0,
+        actions: [_cartButton(context)],
       ),
+      bottomNavigationBar: _cartBar(context),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
