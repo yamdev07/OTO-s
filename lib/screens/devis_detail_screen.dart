@@ -5,12 +5,19 @@ import '../models/devis.dart';
 import '../services/devis_service.dart';
 import '../theme/app_colors.dart';
 import '../utils/format.dart';
+import 'rendezvous_form_screen.dart';
+import 'wallet_screen.dart';
 
 /// Détail d'un devis : lignes, total, statut et paiement.
-class DevisDetailScreen extends StatelessWidget {
+class DevisDetailScreen extends StatefulWidget {
   final String devisId;
   const DevisDetailScreen({super.key, required this.devisId});
 
+  @override
+  State<DevisDetailScreen> createState() => _DevisDetailScreenState();
+}
+
+class _DevisDetailScreenState extends State<DevisDetailScreen> {
   static const _statusColors = {
     'en attente': AppColors.warning,
     'accepté': AppColors.success,
@@ -19,6 +26,8 @@ class DevisDetailScreen extends StatelessWidget {
     'en cours': AppColors.primary,
     'terminé': AppColors.purple,
   };
+
+  bool _paying = false;
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +41,7 @@ class DevisDetailScreen extends StatelessWidget {
         elevation: 0,
       ),
       body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-        stream: DevisService.instance.watchOne(devisId),
+        stream: DevisService.instance.watchOne(widget.devisId),
         builder: (context, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
             return const Center(
@@ -50,9 +59,264 @@ class DevisDetailScreen extends StatelessWidget {
               if (devis.lignes.isNotEmpty) _buildLignes(devis),
               if (devis.lignes.isNotEmpty) const SizedBox(height: 16),
               _buildRecap(devis),
+              const SizedBox(height: 20),
+              _buildActions(devis),
             ],
           );
         },
+      ),
+    );
+  }
+
+  // ------------------------------------------------------------- Actions
+
+  Widget _buildActions(Devis devis) {
+    if (devis.paye) {
+      return Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.success.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.success.withOpacity(0.3)),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.verified, color: AppColors.success),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Devis payé. Vous pouvez planifier votre intervention.',
+                    style: TextStyle(
+                        color: AppColors.textDark,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton.icon(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => RendezvousFormScreen(
+                    servicePrerempli: devis.prestation,
+                    devisId: devis.id,
+                  ),
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryDark,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+              ),
+              icon: const Icon(Icons.event_available),
+              label: const Text('Prendre rendez-vous',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return SizedBox(
+      width: double.infinity,
+      height: 54,
+      child: ElevatedButton.icon(
+        onPressed: _paying ? null : () => _ouvrirPaiement(devis),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.success,
+          foregroundColor: Colors.white,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        ),
+        icon: _paying
+            ? const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                    color: Colors.white, strokeWidth: 2.5),
+              )
+            : const Icon(Icons.lock_outline),
+        label: Text(
+          _paying ? 'Paiement...' : 'Payer ${Format.fcfa(devis.total)}',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+      ),
+    );
+  }
+
+  void _ouvrirPaiement(Devis devis) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text('Moyen de paiement',
+                style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 17,
+                    color: AppColors.textDark)),
+            const SizedBox(height: 4),
+            Text('Montant : ${Format.fcfa(devis.total)}',
+                style:
+                    const TextStyle(color: AppColors.textMuted, fontSize: 13)),
+            const SizedBox(height: 16),
+            _moyen(
+              icon: Icons.account_balance_wallet,
+              titre: 'Crédit O\'TO',
+              sousTitre: 'Payer avec votre solde',
+              actif: true,
+              onTap: () {
+                Navigator.pop(ctx);
+                _payerCredit(devis);
+              },
+            ),
+            const SizedBox(height: 10),
+            _moyen(
+              icon: Icons.phone_android,
+              titre: 'Mobile Money',
+              sousTitre: 'Bientôt disponible',
+              actif: false,
+            ),
+            const SizedBox(height: 10),
+            _moyen(
+              icon: Icons.credit_card,
+              titre: 'Carte bancaire',
+              sousTitre: 'Bientôt disponible',
+              actif: false,
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _moyen({
+    required IconData icon,
+    required String titre,
+    required String sousTitre,
+    required bool actif,
+    VoidCallback? onTap,
+  }) {
+    return Opacity(
+      opacity: actif ? 1 : 0.5,
+      child: InkWell(
+        onTap: actif ? onTap : null,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceAlt,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: AppColors.primaryDark),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(titre,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textDark)),
+                    Text(sousTitre,
+                        style: const TextStyle(
+                            color: AppColors.textLight, fontSize: 12)),
+                  ],
+                ),
+              ),
+              if (actif)
+                const Icon(Icons.chevron_right, color: AppColors.textLight),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _payerCredit(Devis devis) async {
+    setState(() => _paying = true);
+    final res = await DevisService.instance.payerAvecCredit(devis.id);
+    if (!mounted) return;
+    setState(() => _paying = false);
+
+    switch (res) {
+      case PaiementResultat.succes:
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Paiement effectué avec succès !'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: AppColors.success,
+          ),
+        );
+        break;
+      case PaiementResultat.soldeInsuffisant:
+        _dialogSoldeInsuffisant();
+        break;
+      case PaiementResultat.erreur:
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Le paiement a échoué. Réessayez.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        break;
+    }
+  }
+
+  void _dialogSoldeInsuffisant() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Solde insuffisant'),
+        content: const Text(
+            'Votre crédit ne couvre pas ce montant. Rechargez votre compte pour continuer.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const WalletScreen()),
+              );
+            },
+            child: const Text('Recharger'),
+          ),
+        ],
       ),
     );
   }
