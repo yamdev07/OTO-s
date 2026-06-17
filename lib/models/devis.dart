@@ -36,6 +36,7 @@ class Devis {
   final double total;
   final bool paye;
   final String date;
+  final String datePaiement;
   final List<DevisLigne> lignes;
 
   const Devis({
@@ -47,6 +48,7 @@ class Devis {
     required this.total,
     required this.paye,
     required this.date,
+    required this.datePaiement,
     required this.lignes,
   });
 
@@ -64,6 +66,7 @@ class Devis {
           0,
       paye: d['paye'] == true,
       date: d['date'] as String? ?? '',
+      datePaiement: d['datePaiement'] as String? ?? '',
       lignes: items
           .map((e) => DevisLigne.fromMap(e as Map<String, dynamic>))
           .toList(),
