@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../utils/format.dart';
+import 'devis_detail_screen.dart';
 
 class DevisScreen extends StatefulWidget {
   const DevisScreen({super.key});
@@ -36,6 +37,7 @@ class _DevisScreenState extends State<DevisScreen> {
   static const _statusColors = {
     'en attente': Color(0xFFF59E0B),
     'accepté': Color(0xFF10B981),
+    'payé': Color(0xFF10B981),
     'refusé': Color(0xFFEF4444),
     'en cours': Color(0xFF3B82F6),
     'terminé': Color(0xFF8B5CF6),
@@ -164,8 +166,9 @@ class _DevisScreenState extends State<DevisScreen> {
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: docs.length,
                   itemBuilder: (context, i) {
-                    final d = docs[i].data() as Map<String, dynamic>;
-                    return _buildDevisCard(d);
+                    final doc = docs[i];
+                    final d = doc.data() as Map<String, dynamic>;
+                    return _buildDevisCard(context, doc.id, d);
                   },
                 );
               },
@@ -329,7 +332,7 @@ class _DevisScreenState extends State<DevisScreen> {
     );
   }
 
-  Widget _buildDevisCard(Map<String, dynamic> d) {
+  Widget _buildDevisCard(BuildContext context, String id, Map<String, dynamic> d) {
     final statut = d['statut'] as String? ?? 'en attente';
     final color =
         _statusColors[statut] ?? const Color(0xFF64748B);
@@ -337,7 +340,12 @@ class _DevisScreenState extends State<DevisScreen> {
     final total = (d['total'] as num?) ?? (d['prixEstime'] as num? ?? 0);
     final paye = d['paye'] == true;
 
-    return Container(
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => DevisDetailScreen(devisId: id)),
+      ),
+      child: Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -455,10 +463,34 @@ class _DevisScreenState extends State<DevisScreen> {
                           )),
                     ],
                   ),
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF59E0B).withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.lock_clock,
+                          size: 12, color: Color(0xFFF59E0B)),
+                      SizedBox(width: 3),
+                      Text('À payer',
+                          style: TextStyle(
+                            color: Color(0xFFF59E0B),
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          )),
+                    ],
+                  ),
                 ),
             ],
           ),
         ],
+      ),
       ),
     );
   }

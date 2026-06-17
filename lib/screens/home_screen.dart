@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../data/service_catalog.dart';
 import '../models/service_category.dart';
 import '../services/client_service.dart';
+import '../services/devis_service.dart';
 import '../services/rendezvous_service.dart';
 import '../theme/app_colors.dart';
 import '../utils/format.dart';
@@ -233,7 +234,10 @@ class _HomeScreenState extends State<HomeScreen> {
           return Expanded(
             child: GestureDetector(
               onTap: a['onTap'] as VoidCallback,
-              child: Container(
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
                 margin: const EdgeInsets.symmetric(horizontal: 5),
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 decoration: BoxDecoration(
@@ -283,10 +287,41 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               ),
+              if (a['label'] == 'Mes devis')
+                Positioned(right: 2, top: -4, child: _devisBadge()),
+            ],
+          ),
             ),
           );
         }).toList(),
       ),
+    );
+  }
+
+  /// Petit badge rouge indiquant le nombre de devis à payer.
+  Widget _devisBadge() {
+    return StreamBuilder<int>(
+      stream: DevisService.instance.nbAPayer(),
+      builder: (context, snap) {
+        final n = snap.data ?? 0;
+        if (n == 0) return const SizedBox.shrink();
+        return Container(
+          padding: const EdgeInsets.all(4),
+          constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
+          decoration: const BoxDecoration(
+            color: AppColors.danger,
+            shape: BoxShape.circle,
+          ),
+          child: Text(
+            '$n',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.bold),
+          ),
+        );
+      },
     );
   }
 

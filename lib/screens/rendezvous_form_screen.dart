@@ -39,8 +39,17 @@ class _RendezvousFormScreenState extends State<RendezvousFormScreen> {
       'Dépannage',
       ...ServiceCatalog.categories.map((c) => c.nom),
     ];
-    _service = widget.servicePrerempli ?? _services.first;
+    // Pour le dropdown, on garde une valeur valide ; le service d'un devis
+    // (souvent hors liste) est géré séparément via _lieDevis.
+    _service = (widget.servicePrerempli != null &&
+            _services.contains(widget.servicePrerempli))
+        ? widget.servicePrerempli
+        : _services.first;
   }
+
+  bool get _lieDevis => widget.devisId != null;
+  String get _serviceFinal =>
+      _lieDevis ? (widget.servicePrerempli ?? 'Intervention') : (_service ?? 'Dépannage');
 
   @override
   void dispose() {
@@ -109,7 +118,7 @@ class _RendezvousFormScreenState extends State<RendezvousFormScreen> {
     try {
       await RendezvousService.instance.prendre(
         date: dt,
-        service: _service ?? 'Dépannage',
+        service: _serviceFinal,
         adresse: _adresse.text.trim(),
         devisId: widget.devisId,
         lat: _lieu?.latitude,
@@ -148,25 +157,74 @@ class _RendezvousFormScreenState extends State<RendezvousFormScreen> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          _label('Prestation'),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceAlt,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: _service,
-                isExpanded: true,
-                items: _services
-                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                    .toList(),
-                onChanged: (v) => setState(() => _service = v),
+          if (_lieDevis) ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.success.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.success.withOpacity(0.3)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.verified, color: AppColors.success, size: 20),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Devis payé — planifiez l\'intervention',
+                      style: TextStyle(
+                          color: AppColors.textDark,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
+            const SizedBox(height: 16),
+          ],
+          _label('Prestation'),
+          if (_lieDevis)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceAlt,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.lock_outline,
+                      size: 18, color: AppColors.textLight),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(_serviceFinal,
+                        style: const TextStyle(
+                            color: AppColors.textDark, fontSize: 14)),
+                  ),
+                ],
+              ),
+            )
+          else
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceAlt,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: _service,
+                  isExpanded: true,
+                  items: _services
+                      .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                      .toList(),
+                  onChanged: (v) => setState(() => _service = v),
+                ),
+              ),
+            ),
           const SizedBox(height: 16),
           _label('Date'),
           _pickerTile(
