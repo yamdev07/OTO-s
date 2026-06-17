@@ -5,6 +5,7 @@ import '../services/rendezvous_service.dart';
 import '../theme/app_colors.dart';
 import '../utils/format.dart';
 import 'rendezvous_form_screen.dart';
+import 'suivi_screen.dart';
 
 /// Liste des rendez-vous du client + accès à la prise de RDV.
 class RendezvousScreen extends StatelessWidget {
@@ -145,15 +146,33 @@ class RendezvousScreen extends StatelessWidget {
           ],
           if (annulable) ...[
             const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                onPressed: () => RendezvousService.instance.annuler(id),
-                icon: const Icon(Icons.cancel_outlined,
-                    size: 16, color: AppColors.danger),
-                label: const Text('Annuler',
-                    style: TextStyle(color: AppColors.danger)),
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton.icon(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => SuiviScreen(
+                        service: d['service'] as String? ?? 'Intervention',
+                        lat: (d['lat'] as num?)?.toDouble(),
+                        lng: (d['lng'] as num?)?.toDouble(),
+                      ),
+                    ),
+                  ),
+                  icon: const Icon(Icons.navigation_outlined,
+                      size: 16, color: AppColors.primary),
+                  label: const Text('Suivre',
+                      style: TextStyle(color: AppColors.primary)),
+                ),
+                TextButton.icon(
+                  onPressed: () => RendezvousService.instance.annuler(id),
+                  icon: const Icon(Icons.cancel_outlined,
+                      size: 16, color: AppColors.danger),
+                  label: const Text('Annuler',
+                      style: TextStyle(color: AppColors.danger)),
+                ),
+              ],
             ),
           ],
         ],

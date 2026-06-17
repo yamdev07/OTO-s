@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../data/service_catalog.dart';
 import '../services/rendezvous_service.dart';
+import '../services/location_service.dart';
 import '../theme/app_colors.dart';
 import '../utils/format.dart';
 
@@ -19,10 +22,13 @@ class RendezvousFormScreen extends StatefulWidget {
 
 class _RendezvousFormScreenState extends State<RendezvousFormScreen> {
   final _adresse = TextEditingController();
+  final _mapCtrl = MapController();
   DateTime? _date;
   TimeOfDay? _heure;
   String? _service;
+  LatLng? _lieu;
   bool _saving = false;
+  bool _locating = false;
 
   late final List<String> _services;
 
@@ -61,6 +67,27 @@ class _RendezvousFormScreenState extends State<RendezvousFormScreen> {
     if (t != null) setState(() => _heure = t);
   }
 
+  Future<void> _utiliserGps() async {
+    setState(() => _locating = true);
+    final pos = await LocationService.positionActuelle();
+    if (!mounted) return;
+    setState(() {
+      _locating = false;
+      if (pos != null) _lieu = pos;
+    });
+    if (pos != null) {
+      _mapCtrl.move(pos, 15);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'GPS indisponible ici (HTTP). Touchez la carte pour situer le lieu.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   Future<void> _confirmer() async {
     if (_date == null || _heure == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -85,6 +112,8 @@ class _RendezvousFormScreenState extends State<RendezvousFormScreen> {
         service: _service ?? 'Dépannage',
         adresse: _adresse.text.trim(),
         devisId: widget.devisId,
+        lat: _lieu?.latitude,
+        lng: _lieu?.longitude,
       );
       if (!mounted) return;
       Navigator.pop(context, true);
@@ -184,6 +213,32 @@ class _RendezvousFormScreenState extends State<RendezvousFormScreen> {
               ),
             ),
           ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _label('Lieu d\'intervention sur la carte'),
+              TextButton.icon(
+                onPressed: _locating ? null : _utiliserGps,
+                icon: _locating
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.my_location, size: 16),
+                label: const Text('Ma position'),
+              ),
+            ],
+          ),
+          _buildMap(),
+          const SizedBox(height: 6),
+          Text(
+            _lieu == null
+                ? 'Touchez la carte pour placer le repère du lieu.'
+                : 'Lieu défini : ${_lieu!.latitude.toStringAsFixed(5)}, ${_lieu!.longitude.toStringAsFixed(5)}',
+            style: const TextStyle(color: AppColors.textLight, fontSize: 12),
+          ),
           const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
@@ -210,6 +265,42 @@ class _RendezvousFormScreenState extends State<RendezvousFormScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMap() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: SizedBox(
+        height: 220,
+        child: FlutterMap(
+          mapController: _mapCtrl,
+          options: MapOptions(
+            initialCenter: _lieu ?? LocationService.defautCotonou,
+            initialZoom: 13,
+            onTap: (_, latlng) => setState(() => _lieu = latlng),
+          ),
+          children: [
+            TileLayer(
+              urlTemplate:
+                  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'com.otoservice.app',
+            ),
+            if (_lieu != null)
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    point: _lieu!,
+                    width: 44,
+                    height: 44,
+                    child: const Icon(Icons.location_on,
+                        color: AppColors.danger, size: 44),
+                  ),
+                ],
+              ),
+          ],
+        ),
       ),
     );
   }
