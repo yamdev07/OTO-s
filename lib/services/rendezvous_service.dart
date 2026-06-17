@@ -24,6 +24,8 @@ class RendezvousService {
     String adresse = '',
     String vehicule = '',
     String? devisId,
+    double? lat,
+    double? lng,
   }) async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
@@ -33,6 +35,8 @@ class RendezvousService {
       'adresse': adresse,
       'vehicule': vehicule,
       'devisId': devisId ?? '',
+      'lat': lat,
+      'lng': lng,
       'date': date.toIso8601String(),
       'statut': 'planifié',
       'createdAt': DateTime.now().toIso8601String(),
