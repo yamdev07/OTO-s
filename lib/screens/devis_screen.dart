@@ -463,6 +463,29 @@ class _DevisScreenState extends State<DevisScreen> {
                           )),
                     ],
                   ),
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF59E0B).withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.lock_clock,
+                          size: 12, color: Color(0xFFF59E0B)),
+                      SizedBox(width: 3),
+                      Text('À payer',
+                          style: TextStyle(
+                            color: Color(0xFFF59E0B),
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          )),
+                    ],
+                  ),
                 ),
             ],
           ),
