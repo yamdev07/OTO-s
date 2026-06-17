@@ -81,17 +81,31 @@ class _DevisDetailScreenState extends State<DevisDetailScreen> {
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: AppColors.success.withOpacity(0.3)),
             ),
-            child: const Row(
+            child: Row(
               children: [
-                Icon(Icons.verified, color: AppColors.success),
-                SizedBox(width: 12),
+                const Icon(Icons.verified, color: AppColors.success),
+                const SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    'Devis payé. Vous pouvez planifier votre intervention.',
-                    style: TextStyle(
-                        color: AppColors.textDark,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Devis payé. Vous pouvez planifier votre intervention.',
+                        style: TextStyle(
+                            color: AppColors.textDark,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13),
+                      ),
+                      if (devis.datePaiement.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(
+                            'Le ${Format.dateCourte(devis.datePaiement)}',
+                            style: const TextStyle(
+                                color: AppColors.textMuted, fontSize: 12),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ],
@@ -126,31 +140,68 @@ class _DevisDetailScreenState extends State<DevisDetailScreen> {
       );
     }
 
-    return SizedBox(
-      width: double.infinity,
-      height: 54,
-      child: ElevatedButton.icon(
-        onPressed: _paying ? null : () => _ouvrirPaiement(devis),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.success,
-          foregroundColor: Colors.white,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+    return Column(
+      children: [
+        SizedBox(
+          width: double.infinity,
+          height: 54,
+          child: ElevatedButton.icon(
+            onPressed: _paying ? null : () => _ouvrirPaiement(devis),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.success,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14)),
+            ),
+            icon: _paying
+                ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                        color: Colors.white, strokeWidth: 2.5),
+                  )
+                : const Icon(Icons.lock_outline),
+            label: Text(
+              _paying ? 'Paiement...' : 'Payer ${Format.fcfa(devis.total)}',
+              style:
+                  const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
         ),
-        icon: _paying
-            ? const SizedBox(
-                width: 22,
-                height: 22,
-                child: CircularProgressIndicator(
-                    color: Colors.white, strokeWidth: 2.5),
-              )
-            : const Icon(Icons.lock_outline),
-        label: Text(
-          _paying ? 'Paiement...' : 'Payer ${Format.fcfa(devis.total)}',
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        TextButton.icon(
+          onPressed: _paying ? null : () => _confirmerAnnulation(devis.id),
+          icon: const Icon(Icons.delete_outline,
+              size: 18, color: AppColors.danger),
+          label: const Text('Annuler ce devis',
+              style: TextStyle(color: AppColors.danger)),
         ),
+      ],
+    );
+  }
+
+  Future<void> _confirmerAnnulation(String id) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Annuler le devis'),
+        content: const Text('Ce devis sera définitivement supprimé.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Retour'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Supprimer',
+                style: TextStyle(color: AppColors.danger)),
+          ),
+        ],
       ),
     );
+    if (ok == true) {
+      await DevisService.instance.annuler(id);
+      if (mounted) Navigator.pop(context);
+    }
   }
 
   void _ouvrirPaiement(Devis devis) {
