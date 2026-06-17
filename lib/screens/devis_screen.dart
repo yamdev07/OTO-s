@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../utils/format.dart';
+
 class DevisScreen extends StatefulWidget {
   const DevisScreen({super.key});
 
@@ -149,6 +151,13 @@ class _DevisScreenState extends State<DevisScreen> {
                 if (docs.isEmpty) {
                   return _buildEmptyHistory();
                 }
+
+                // Tri par date décroissante côté client (évite un index composite).
+                docs.sort((a, b) {
+                  final da = (a.data() as Map<String, dynamic>)['date'] ?? '';
+                  final db = (b.data() as Map<String, dynamic>)['date'] ?? '';
+                  return (db as String).compareTo(da as String);
+                });
 
                 return ListView.builder(
                   shrinkWrap: true,
@@ -324,6 +333,9 @@ class _DevisScreenState extends State<DevisScreen> {
     final statut = d['statut'] as String? ?? 'en attente';
     final color =
         _statusColors[statut] ?? const Color(0xFF64748B);
+    final items = (d['items'] as List?) ?? const [];
+    final total = (d['total'] as num?) ?? (d['prixEstime'] as num? ?? 0);
+    final paye = d['paye'] == true;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -372,16 +384,40 @@ class _DevisScreenState extends State<DevisScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          Text(
-            d['description'] as String? ?? '',
-            style: const TextStyle(
-              color: Color(0xFF64748B),
-              fontSize: 13,
-              height: 1.4,
+          if (items.isNotEmpty)
+            ...items.map((it) {
+              final m = it as Map<String, dynamic>;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  children: [
+                    const Icon(Icons.check_circle_outline,
+                        size: 14, color: Color(0xFF94A3B8)),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        '${(m['quantite'] as num?)?.toInt() ?? 1}× ${m['titre'] ?? ''}',
+                        style: const TextStyle(
+                            color: Color(0xFF64748B), fontSize: 12),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            })
+          else
+            Text(
+              d['description'] as String? ?? '',
+              style: const TextStyle(
+                color: Color(0xFF64748B),
+                fontSize: 13,
+                height: 1.4,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
           const SizedBox(height: 10),
           Row(
             children: [
@@ -389,13 +425,37 @@ class _DevisScreenState extends State<DevisScreen> {
                   color: Colors.grey[400], size: 16),
               const SizedBox(width: 4),
               Text(
-                '${d['prixEstime'] ?? 0} FCFA',
+                Format.fcfa(total),
                 style: const TextStyle(
                   color: Color(0xFF1E293B),
                   fontWeight: FontWeight.w600,
                   fontSize: 13,
                 ),
               ),
+              const Spacer(),
+              if (paye)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981).withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.verified,
+                          size: 12, color: Color(0xFF10B981)),
+                      SizedBox(width: 3),
+                      Text('Payé',
+                          style: TextStyle(
+                            color: Color(0xFF10B981),
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          )),
+                    ],
+                  ),
+                ),
             ],
           ),
         ],
