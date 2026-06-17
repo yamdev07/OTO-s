@@ -108,6 +108,21 @@ class DevisService {
   Stream<DocumentSnapshot<Map<String, dynamic>>> watchOne(String devisId) =>
       _col.doc(devisId).snapshots();
 
+  /// Flux des devis du client courant.
+  Stream<QuerySnapshot<Map<String, dynamic>>> watchClient() {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return const Stream.empty();
+    return _col.where('clientId', isEqualTo: uid).snapshots();
+  }
+
+  /// Flux du nombre de devis restant à payer (statut non payé).
+  Stream<int> nbAPayer() => watchClient().map(
+        (snap) => snap.docs.where((d) => d.data()['paye'] != true).length,
+      );
+
+  /// Annule (supprime) un devis non payé.
+  Future<void> annuler(String devisId) => _col.doc(devisId).delete();
+
   /// Crée un devis « libre » à partir du formulaire manuel.
   Future<void> creerManuel({
     required String prestation,
