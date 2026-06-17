@@ -46,9 +46,120 @@ class DevisDetailScreen extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             children: [
               _buildStatusHeader(devis),
+              const SizedBox(height: 16),
+              if (devis.lignes.isNotEmpty) _buildLignes(devis),
+              if (devis.lignes.isNotEmpty) const SizedBox(height: 16),
+              _buildRecap(devis),
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildLignes(Devis devis) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text('Prestations',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: AppColors.textDark)),
+            ),
+          ),
+          ...List.generate(devis.lignes.length, (i) {
+            final l = devis.lignes[i];
+            return Column(
+              children: [
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 28,
+                        height: 28,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text('${l.quantite}×',
+                            style: const TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12)),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(l.titre,
+                            style: const TextStyle(
+                                fontSize: 13, color: AppColors.textDark)),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(Format.fcfa(l.sousTotal),
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                              color: AppColors.textDark)),
+                    ],
+                  ),
+                ),
+                if (i < devis.lignes.length - 1)
+                  const Divider(height: 1, indent: 16, endIndent: 16),
+              ],
+            );
+          }),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecap(Devis devis) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text('Total à payer',
+              style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textMuted)),
+          Text(Format.fcfa(devis.total),
+              style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textDark)),
+        ],
       ),
     );
   }
